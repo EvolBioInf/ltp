@@ -1,0 +1,556 @@
+#+begin_export latex
+\paragraph{Like most programmers, I've relearned my craft
+  periodically in the past. I'm currently doing it again, but this
+  could be the last time.} Programming is often practiced as the art
+of solving a particular problem. A solution is thought to have been
+reached as soon as the program works, which is checked by subjecting
+it to a battery of tests. In this standard scenario, all attention is
+focused on getting the program done, while little thought is given to
+describing the problem and the reasoning that underlies its
+solution. In this way the Why of a program is left untold and its How
+expressed mainly in code.
+
+The result is a text that is hard to make sense of, even if the
+program it specifies runs correctly. This is because only humans, not
+machines, can make sense of complex artifacts like computer
+programs. And we tell stories to help us understand.
+
+Programming languages are good for expressing the low level aspects of
+a solution, but they are lousy for telling stories. For that we need
+images, music, spoken and written language.
+
+Donald Knuth first came up with the idea of making the description of
+a program in plain English central to coding, a style he referred to
+as ``literate programming'' \cite[ch. 4]{knu92:lit}.  In literate
+programming, explanatory prose is punctuated by small chunks of
+code. These are introduced wherever appropriate from the point of view
+of the reader, rather than from the point of view of the
+compiler. Successful writers are experts at knowing their readers'
+minds. Knuth suggests, aspiring programmers should also concentrate on
+the reader. Largely ignoring the compiler perspective is possible
+because the code chunks are copied automatically from the main text,
+rearranged, and written to a conventional source file. Knuth called
+this code extraction "tangling".
+
+Apart from disentangling the code from the prose, these two components
+of a literate program need to be integrated into the final document,
+a step Knuth called ``weaving''. Since the woven document has the
+program entangled in it, this document---as opposed to the bare
+program---is a programmer's final product.
+
+The result looks like a mathematics text, where prose is clarified by
+the occasional equation. Reducing such a text to its equations would
+render it useless. But I realized recently that this is what I tend to
+do when programming. In fact, it's even worse, as I hardly ever read
+other people's code to learn from, I only use it. Few programs are
+presented for human consumption; mine certainly weren't until
+recently.
+
+This situation is diametrically opposed to how I, like many people,
+enjoy working, which is by learning from examples I admire. Initially
+I thought learning a new programming language might help me write more
+pleasant code. But when I stumbled upon literate programming, I
+realized it's not so much about the language, as about achieving the
+right balance between prose and code. The typical programming setup favors
+code production with prose in the form of comments lacking the graces
+of other technical documents like headers, different fonts, figures,
+and tables.
+
+In contrast to this tradition, literary programming documents are
+typeset in a powerful system like \LaTeX{}. The resulting document
+also contains automatically generated information about the relative location of code chunks.
+
+For example, say we would like to count the residues in biological
+sequences. Sequence data are distributed in files like the one shown
+in Figure~\ref{fig:fasta}, where each sequence consists of a single
+header line marked by \verb+>+ in its first column, and the
+corresponding sequence data in one or more rows of variable
+length. The sequences in Figure~\ref{fig:fasta} happen to be the
+genomes of two strains of the bacterium \textit{Escherichia coli},
+which lives inside the guts of warm-blooded animals, including
+us. The genome of the first strain is 4,965,553 nucleotides long,
+that of the second 4,641,652. For comparison, the King James Bible
+available on the net consists of 4,452,070 characters, about the size
+of one \textit{E. coli} genome.
+\begin{figure}
+\begin{center}
+\scriptsize
+\begin{verbatim}
+>FM180568.1 Escherichia coli 0127:H6 E2348/69 complete genome, strain E2348/69
+AGCTTTTCATTCTGCCTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC
+TTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAA
+TATAGGCATAGCGCACAGACAGATAAAAATTACAGAGTACACAACATCCATGAAACGCATTAGCACCACC
+...
+>U00096.3 Escherichia coli str. K-12 substr. MG1655, complete genome
+AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC
+TTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAA
+TATAGGCATAGCGCACAGACAGATAAAAATTACAGAGTACACAACATCCATGAAACGCATTAGCACCACC
+...
+\end{verbatim}
+\end{center}
+\caption{An abdidged FASTA file containing two bacterial genome sequences.}\label{fig:fasta}
+\end{figure}
+Our aim is to determine the total number of nucleotides per sequence and
+the count of each nucleotide, \texttt{A}, \texttt{C}, \texttt{G}, and
+\texttt{T}. Sequences might also contain a few extra characters like \texttt{N}
+to indicate an unknown nucleotide. Our program, \texttt{cr} for
+\emph{count residues}, has the overall structure
+#+end_export
+#+begin_src C <<cr.c>>=
+  // <<includes>>
+  // <<prototypes>>
+  // <<functions>>
+  // <<main>>
+#+end_src
+#+begin_export latex
+Chunks are labeled in the left margin by the page number. If there is
+more than one chunk on a page, the label is extended by $\mathrm{a},
+\mathrm{b}, \mathrm{c},...$
+
+A chunk is referred to by
+$\langle\textit{name}\ \mathrm{location}\rangle$, for example,
+$\langle\emph{foo.c}\ \mathrm{3b}\rangle$ means that \emph{foo.c} is
+defined on page 3, where it is the second chunk.
+
+On the first line of a chunk name and position are followed by ($\equiv$) if
+the chunk is defined or ($+{\equiv}$) if it is appended to
+a previous chunk. In the right margin the relationship of a chunk,
+$c$, to other chunks in the document is made transparent. This might
+be
+\[
+(u)\lhd p\ f\rhd
+\]
+where $u$ is the chunk that uses $c$, $p$ precedes it, and $f$ follows
+it; in other words, after tangling the chunks $c$, $p$, and $f$ are
+concatenated to form $pcf$. This ability to specify code in the
+meta-notation of chunks, allows a programmer to write in the order
+best suited to telling the story of her program.
+
+In the following paragraphs we implement the sub-chunks of
+$\langle\emph{cr.c}\rangle$, which eventually get tangled into the
+file \texttt{cr.c}. We start by implementing
+$\langle\emph{main}\rangle$, as this determines the contents of the
+other chunks.
+#+end_export
+#+begin_src C <<main>>=
+  int main(int argc, char **argv) {
+    // <<help?>>
+    if (argc == 1) {
+      FILE *fp = stdin;
+      scanFile(fp);
+    } else {
+      for (int i = 1; i < argc; i++) {
+	FILE *fp = fopen(argv[i], "r");
+	// <<file ok?>>
+	scanFile(fp);
+	fclose(fp);
+      }
+    }
+  }
+#+end_src
+#+begin_export latex
+This requires the library header for  input/output
+#+end_export
+#+begin_src C <<includes>>=
+  #include <stdio.h>
+#+end_src
+#+begin_export latex
+In addition, the new function \texttt{scanFile} needs a prototype
+#+end_export
+#+begin_src C <<prototypes>>=
+  void scanFile(FILE *fp);
+#+end_src
+#+begin_export latex
+\noindent and an implementation, once we have finished \texttt{main}. For this we
+still need to check whether the user asked for help via the
+\texttt{-h} option
+#+end_export
+#+begin_src C <<help?>>=
+  if (argc >= 2 && strcmp(argv[1], "-h") == 0) {
+      printf("Usage: cr [-h] [f1.fasta f2.fasta]\n");
+      printf("Count residues in sequence files.\n");
+      exit(0);
+  }
+#+end_src
+#+begin_export latex
+The function \texttt{strcmp} is defined in the string header of the library.
+#+end_export
+#+begin_src C <<includes>>=
+  #include <string.h>
+#+end_src
+#+begin_export latex
+In addition, opening a file might fail, in which case it
+is skipped.
+#+end_export
+#+begin_src C <<file ok?>>=
+    if (fp == NULL) {
+      fprintf(stderr, "WARNING: Could not open ");
+      fprintf(stderr, "file %s.\n", argv[i]);
+      continue;
+    }
+#+end_src
+#+begin_export latex
+Having finished \texttt{main}, let's implement the central routine,
+\texttt{scanFile}. It loops across the file, while referring to
+variables declared in preparation of the loop.
+#+end_export
+#+begin_src C <<functions>>=
+  void scanFile(FILE *fp) {
+    // <<prepare loop>>
+    // <<loop>>
+  }
+#+end_src
+#+begin_export latex
+Our looping mechanism uses the standard function \texttt{getline},
+which reads the file line by line and returns the number of characters
+read. While doing so, three types of punctuation marks are
+encountered: Presence of absence of \verb+>+ in the first column to
+distinguish headers from data, and the end of the file, which closes
+the last sequence.
+#+end_export
+#+begin_src C <<loop>>=
+  while ((nread = getline(&line, &len, fp)) != -1) {
+    if (line[0] == '>') {
+      // <<deal with header>>
+    } else {
+      // <<deal with data>>
+    }
+  }
+  // <<deal with last sequence>>
+  // <<free memory>>
+#+end_src
+#+begin_export latex
+The variables need to be declared prior to looping
+#+end_export
+#+begin_src C <<prepare loop>>=
+  ssize_t nread;
+  char *line = NULL;
+  size_t len = 0;
+#+end_src
+#+begin_export latex
+\noindent where \texttt{ssize\_t} is a signed long integer and \texttt{size\_t}
+an unsigned long integer. These types are not part of the C language,
+but are provided by the library.  In addition, \texttt{getline}
+allocates space for \texttt{line}, which needs to be freed after the
+loop.
+#+end_export
+#+begin_src C <<free memory>>=
+  free(line);
+#+end_src
+#+begin_export latex
+To implement $\langle\textit{deal with header}\rangle$, let's take
+another look at the sequence headers in Figure~\ref{fig:fasta}. The
+first one starts a new sequence. However, all subsequent headers have
+dual meaning: They open a new sequence and close the previous one. The
+trick is to first deal with the sequence being closed---if any---and
+then with the sequence being opened.  For the sequence being closed,
+its header and residue counts are printed and the header is freed. For
+the sequence being opened, its header is saved and the residue counts
+are set to zero.
+#+end_export
+#+begin_src C <<deal with header>>=
+  if (first) {
+    first = 0;
+  } else {
+    printCount(header, count, n);
+    free(header);
+  }
+  header = strndup(line, nread - 1);
+  for (int i = 0; i < n; i++)
+    count[i] = 0;
+#+end_src
+#+begin_export latex
+This requires the declaration of additional variables
+#+end_export
+#+begin_src C <<prepare loop>>=
+  int first = 1;
+  char *header;
+  int n = 128;
+  int *count = (int *)malloc(n * sizeof(int));
+#+end_src
+#+begin_export latex
+\noindent where $n=128$ is the size of the ASCII character set. Sequence data is
+restricted to this alphabet. The function \texttt{malloc} is declared in
+the standard library
+#+end_export
+#+begin_src C <<includes>>=
+  #include <stdlib.h>
+#+end_src
+#+begin_export latex
+\noindent and the memory it allocates is freed again
+#+end_export
+#+begin_src C <<free memory>>=
+free(count);
+#+end_src
+#+begin_export latex
+In addition, the function \texttt{printCount} is declared
+#+end_export
+#+begin_src C <<prototypes>>=
+  void printCount(char *header, int *count, int n);
+#+end_src
+#+begin_export latex
+\noindent and implemented by printing the header, residue counts, and sequence
+length. Since sequences are long, digits are grouped by thousands
+through setting the numeric attribute of the locale and using the
+format \verb+%'d+.
+#+end_export
+#+begin_src C <<functions>>=
+  void printCount(char *header, int *count, int n) {
+    int l = 0;
+    printf("%s\n", header);
+    setlocale(LC_NUMERIC, "");
+    for (int i = 0; i < n; i++) {
+      if (count[i]) {
+        printf("%c\t%'d\n", i, count[i]);
+        l += count[i];
+      }
+    }
+    printf("Len\t%'d\n", l);
+  }
+#+end_src
+#+begin_export latex
+The function \texttt{setlocale} is defined in the standard library.
+#+end_export
+#+begin_src C <<includes>>=
+  #include <locale.h>
+#+end_src
+#+begin_export latex
+Having dealt with the sequence headers, we now turn to the sequence
+data and count all characters in a line except for the newline which
+may close it. When counting, characters are cast to integers because
+only integers are legal array indexes. In addition, the modulo
+function ($\%$) is used to ensure the index is always inside the array
+bounds.
+#+end_export
+#+begin_src C <<deal with data>>=
+  if (line[nread - 1] == '\n')
+    c = nread - 1;
+  else
+    c = nread;
+  for (int i = 0; i < c; i++)
+    count[(int)line[i] % n]++;
+#+end_src
+#+begin_export latex
+\noindent which requires another variable declaration
+#+end_export
+#+begin_src C <<prepare loop>>=
+  int c;
+#+end_src
+#+begin_export latex
+Finally, at the end of the file, the last sequence is printed.
+#+end_export
+#+begin_src C <<deal with last sequence>>=
+printCount(header, count, n);
+#+end_src
+#+begin_export latex
+This completes our implementation of \texttt{cr}. Its code can now be
+generated by tangling. However, at this point we encounter the
+technicalities of literate programming, which I haven't quite mastered
+yet, but this is my current understanding.
+
+In theory, literate programming only requires notation to distinguish
+prose from code, and notation for naming and referencing code
+chunks. A text file with such notation can then be woven and tangled
+using an appropriate program. In practice, however, prose and code
+have different layouts, which is best handled by a context-sensitive
+editor. It turned out to be quite difficult to find the right
+combination of literate programming parser and editor.
+
+I typeset in \LaTeX{} and code in C. The program \texttt{noweave}
+supports literate programming with this combination of languages; in
+fact, \texttt{noweave} supports any programming language, while the
+surrounding prose is typeset in \LaTeX{}. I write literate programming
+documents in \texttt{emacs}, for which a \texttt{noweave} mode is
+available. Unfortunately, I could not get this to work reliably. So I
+edit in \texttt{emacs} Org mode, which leaves me with a file that
+still needs to be converted to \texttt{noweb} format, before it can be
+tangled/woven. In Figure~\ref{fig:web} this step is carried out by the
+program \texttt{org2nw}, which we can implement once we understand how
+to edit a literate programming document.
+
+\begin{figure}
+  \begin{center}
+    \scalebox{0.9}{
+      \begin{pspicture}(0,0)(13,4)
+      \begin{psmatrix}[colsep=2.5cm, rowsep=1.2cm]
+        & & \texttt{*.c}, \rnode{1}{\texttt{*.h}} & \rnode{1b}{executable}\\
+        \rnode{2}{\texttt{*.org}} & \rnode{3}{\texttt{*.nw}}\\
+        & & \rnode{4}{\texttt{*.tex}} & \rnode{4b}{\texttt{*.pdf}}
+      \end{psmatrix}
+      \psset{nodesep=3pt}
+      \ncline{->}{2}{3} \naput[nrot=:U]{\texttt{org2nw}}
+      \ncline{->}{3}{1} \naput[nrot=:U]{\texttt{notangle}}
+      \ncline{->}{3}{4} \naput[nrot=:U]{\texttt{noweave}}
+      \ncline{->}{1}{1b}\naput[nrot=:U]{\texttt{gcc}}
+      \ncline{->}{4}{4b}\naput[nrot=:U]{\texttt{pdflatex}}
+      \end{pspicture}
+      }
+  \end{center}
+  \caption{My configuration for literate programming starts with an
+    Org file (\texttt{*.org}), which is converted to a \texttt{noweb}
+    file (\texttt{*.nw}). This is tangled into code ready for
+    compilation and execution, and woven into a \LaTeX{} file ready
+    for typesetting.}\label{fig:web}
+\end{figure}
+
+The program file consists of a mix of \LaTeX{} and code blocks. A
+\LaTeX{} block has the structure
+\begin{verbatim}
+!#+begin_export latex
+
+!#+end_export
+\end{verbatim}
+The corresponding template for
+a code block is
+\begin{verbatim}
+!#+begin_src C @<<main.c>>=
+
+!#+end_src
+\end{verbatim}
+where \verb+@<<main.c>>=+ instructs \texttt{noweave} to start a chunk of
+code called \texttt{main.c}. Inside a chunk of code, other chunks can be referred to by
+writing \verb+@<<chunk name>>+. However, this leads to spurious
+indentation in the \texttt{emacs} C mode, so I guard chunk references
+by the comment delimiter \verb+//+, for example
+\begin{verbatim}
+!#+begin_src C @<<main.c>>=
+!  // @<<includes>>
+!  int main() {
+!    printf("Hello, literate programming\n");
+!  }
+!#+end_src
+\end{verbatim}
+Notice the leading two blanks introduced by the editor. We'd like to
+get rid of them later.
+
+Finally, I use Org headers, which allow easy hiding of document
+sections. They start with \verb+*+, for example,
+\begin{verbatim}
+!* Doggerel
+!** Question
+Why
+did you cry
+and sigh?
+!** Answer
+Because
+it was
+a hopeless cause.
+\end{verbatim}
+Pressing TAB when the cursor is on the top line toggles between this full view
+and very little
+\begin{verbatim}
+!* Doggerel...
+\end{verbatim}
+and a bit more
+\begin{verbatim}
+!* Doggerel...
+!** Question...
+!** Answer...
+\end{verbatim}
+This mechanism allows convenient outlining of long documents.
+
+Now we convert this literate programming document to \texttt{noweb}
+format. The stream editor \texttt{sed} is the ideal tool for
+this. First, the headers of the \LaTeX{} blocks are substituted by the
+equivalent \texttt{noweb} command, \verb+@+. 
+#+end_export
+#+begin_src C <<sed commands>>=
+s/^#+begin_export latex/@/
+#+end_src
+#+begin_export latex
+Then chunk names are extracted from the beginning of code blocks
+#+end_export
+#+begin_src C <<sed commands>>=
+s/^#+begin_src.*<</<</
+#+end_src
+#+begin_export latex
+\noindent and from comments inside code blocks
+#+end_export
+#+begin_src C <<sed commands>>=
+s/\/\/ *<</<</
+#+end_src
+#+begin_export latex
+The ends of blocks are removed
+#+end_export
+#+begin_src C <<sed commands>>=
+/^#+end/d
+#+end_src
+#+begin_export latex
+and likewise the Org headers
+#+end_export
+#+begin_src C <<sed commands>>=
+  /^\*/d
+#+end_src
+#+begin_export latex
+Finally, we remove the two leading blanks in code blocks
+#+end_export
+#+begin_src C <<sed commands>>=
+  s/^  //
+#+end_src
+#+begin_export latex
+Now we can write \texttt{org2nw}
+#+end_export
+#+begin_src C <<org2nw>>=
+  #!/bin/bash
+  sed '
+  //<<sed commands>>
+  ' $@
+#+end_src
+#+begin_export latex
+The text you are reading can be tangled
+\begin{verbatim}
+bash org2nw.sed lp.org | notangle -Rorg2nw > org2nw
+\end{verbatim}
+where \texttt{org2nw.sed} is identical to \texttt{org2nw}, because in
+this chicken \& egg situation we need \texttt{org2nw} before
+tangling. Then we tangle the residue counter
+\begin{verbatim}
+./org2nw lp.org | notangle -Rcr.c > cr.c
+\end{verbatim}
+compile it
+\begin{verbatim}
+gcc cr.c -o cr
+\end{verbatim}
+and run it on the example data
+\scriptsize
+\begin{verbatim}
+zcat seq.fasta.gz | ./cr
+>FM180568.1 Escherichia coli 0127:H6 E2348/69 complete genome, strain E2348/69
+A	1,228,668
+C	1,254,275
+G	1,256,614
+T	1,225,996
+Length	4,965,553
+>U00096.3 Escherichia coli str. K-12 substr. MG1655, complete genome
+A	1,142,742
+C	1,180,091
+G	1,177,437
+T	1,141,382
+Length	4,641,652
+\end{verbatim}
+\normalsize
+
+Weaving would usually be
+\begin{verbatim}
+org2nw lp.org | noweave -x -n > lp.tex
+\end{verbatim}
+followed by typesetting
+\begin{verbatim}
+latex litProg; dvipdf litProg
+\end{verbatim}
+where \texttt{litProg.tex} imports \texttt{lp.tex}.  However, in this
+particular document, commands like
+\begin{verbatim}
+!#+begin_export latex
+\end{verbatim}
+and \verb+@<<+ appear in the text, which are also targets of
+\texttt{org2nw} and \texttt{noweb}. So the document is processed by
+entering
+\begin{verbatim}
+bash process.sh
+\end{verbatim}
+
+It would be great if someone went ahead and wrote a robust
+\texttt{noweb} mode for \texttt{emacs}. Until then, I use this to help
+me relearn coding as literate programming.
+#+end_export
